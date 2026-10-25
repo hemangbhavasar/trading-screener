@@ -13,7 +13,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import numpy as np
 import pandas as pd
-import pandas_ta as ta
 import uvicorn
 import yfinance as yf
 
@@ -27,7 +26,6 @@ security = HTTPBasic()
 AUTH_USER = os.getenv("DASHBOARD_USER")
 AUTH_PASS = os.getenv("DASHBOARD_PASS")
 
-# Safety Guard: Ensure credentials are provided
 if not AUTH_USER or not AUTH_PASS:
     print("\n" + "=" * 65)
     print("CONFIG NOTICE: DASHBOARD_USER and DASHBOARD_PASS are not set.")
@@ -193,11 +191,14 @@ def calculate_pure_trend(df: pd.DataFrame) -> dict:
     length = len(df)
     ema200_len = 200 if length >= 200 else length - 1
     ema50_len = 50 if length >= 50 else min(20, length - 1)
-    ema200 = ta.ema(close, length=ema200_len)
-    ema50 = ta.ema(close, length=ema50_len)
+    
+    # Pure native Pandas EMA (no external dependency)
+    ema200 = close.ewm(span=ema200_len, adjust=False).mean()
+    ema50 = close.ewm(span=ema50_len, adjust=False).mean()
+    
     c = float(close.iloc[-1])
-    e200 = float(ema200.iloc[-1]) if ema200 is not None and not pd.isna(ema200.iloc[-1]) else c
-    e50 = float(ema50.iloc[-1]) if ema50 is not None and not pd.isna(ema50.iloc[-1]) else c
+    e200 = float(ema200.iloc[-1]) if not pd.isna(ema200.iloc[-1]) else c
+    e50 = float(ema50.iloc[-1]) if not pd.isna(ema50.iloc[-1]) else c
     is_bull = (c >= e200) or (e50 >= e200)
     return {
         "status": "uptrend" if is_bull else "downtrend",
