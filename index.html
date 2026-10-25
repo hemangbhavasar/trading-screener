@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NSE F&amp;O • Multi-Strategy Screener Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0b0d;
+      --card-bg: #121418;
+      --table-header: #171a21;
+      --border-color: #21252d;
+      
+      /* Pure Trendfinder Colors */
+      --green-uptrend: #00873e;
+      --green-bright: #00d084;
+      --red-downtrend: #c61221;
+      --red-bright: #ff4d4f;
+      
+      /* Pure Choppy Colors */
+      --chop-green: #00873e;
+      --chop-orange: #d97706;
+      --chop-red: #c61221;
+      
+      --text-muted: #808b98;
+      --text-primary: #edf0f4;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, sans-serif;
+      padding: 18px 24px;
+    }
+
+    /* Live Indices Banner */
+    .indices-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .index-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .index-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .index-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .index-change {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Mode Navigation Bar */
+    .navigation-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .main-nav-tabs {
+      display: flex;
+      background: #181c24;
+      padding: 3px;
+      border-radius: 5px;
+      border: 1px solid var(--border-color);
+    }
+
+    .nav-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 8px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      background: #252c38;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px 18px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .stats-group {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 800;
+      margin-top: 2px;
+    }
+
+    .bias-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bias-track {
+      width: 150px;
+      height: 8px;
+      background: var(--red-downtrend);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .bias-fill {
+      background: var(--green-uptrend);
+      height: 100%;
+      width: 50%;
+      transition: width 0.3s ease;
+    }
+
+    .choppy-legend {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .legend-badge {
+      padding: 4px 10px;
+      border-radius: 3px;
+      color: #fff;
+    }
+
+    /* Header & Refresh Controls */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .title-group h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-fo {
+      font-size: 11px;
+      font-weight: 800;
+      background: #00d084;
+      color: #000;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+
+    .refresh-panel {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 6px;
+      flex-wrap: wrap;
+    }
+
+    .mode-switch-group {
+      display: flex;
+      background: #181c24;
+      border-radius: 4px;
+      padding: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .mode-btn.active {
+      background: #2a3342;
+      color: #fff;
+    }
+
+    .auto-interval-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .auto-interval-controls input {
+      width: 55px;
+      background: #181c24;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 6px;
+      border-radius: 4px;
+      text-align: center;
+      outline: none;
+    }
+
+    .auto-interval-controls select, .filter-select {
+      background: #181c24;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .countdown-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--green-bright);
+      background: rgba(0, 208, 132, 0.1);
+      border: 1px solid rgba(0, 208, 132, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      min-width: 65px;
+      text-align: center;
+    }
+
+    .btn-scan {
+      background: #202633;
+      color: #fff;
+      border: 1px solid #323b4d;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-scan:hover { background: #2b3445; }
+
+    /* Filter Toolbar & Custom Tooltips */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tooltip-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .tab-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active, .tab-btn:hover {
+      background: #1e2430;
+      color: #fff;
+      border-color: #3b4453;
+    }
+
+    .tab-btn-super-green {
+      border-color: rgba(0, 208, 132, 0.4) !important;
+      color: var(--green-bright) !important;
+    }
+    .tab-btn-super-green.active {
+      background: rgba(0, 208, 132, 0.2) !important;
+      border-color: var(--green-bright) !important;
+      color: #fff !important;
+    }
+
+    .tab-btn-super-red {
+      border-color: rgba(255, 77, 79, 0.4) !important;
+      color: var(--red-bright) !important;
+    }
+    .tab-btn-super-red.active {
+      background: rgba(255, 77, 79, 0.2) !important;
+      border-color: var(--red-bright) !important;
+      color: #fff !important;
+    }
+
+    .tooltip-container .tooltip-text {
+      visibility: hidden;
+      width: 240px;
+      background-color: #171b22;
+      color: #eaecef;
+      text-align: left;
+      border-radius: 6px;
+      padding: 8px 10px;
+      position: absolute;
+      z-index: 100;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.2s, visibility 0.2s;
+      font-size: 11px;
+      line-height: 1.4;
+      border: 1px solid #2e3540;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      pointer-events: none;
+      font-weight: normal;
+    }
+
+    .tooltip-container .tooltip-text::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #171b22 transparent transparent transparent;
+    }
+
+    .tooltip-container:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .search-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 4px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      width: 220px;
+    }
+
+    /* Table Matrix */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--card-bg);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+    }
+
+    th {
+      background: var(--table-header);
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 12px 6px;
+      border: 1px solid var(--border-color);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    td {
+      padding: 6px 4px;
+      border: 1px solid var(--border-color);
+      font-size: 13px;
+    }
+
+    tr.stock-row {
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    tr.stock-row:hover { background-color: #171b22; }
+
+    .sector-col {
+      background: #0d0f12;
+      color: #647080;
+      font-weight: 800;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+      padding: 12px 4px;
+      width: 34px;
+    }
+
+    .stock-info {
+      text-align: left;
+      padding-left: 14px;
+      min-width: 190px;
+    }
+
+    .stock-symbol {
+      font-weight: 800;
+      font-size: 14px;
+      display: block;
+      color: #fff;
+    }
+
+    .stock-price {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+    }
+
+    .badge-confluence {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-top: 4px;
+    }
+    .badge-all-green { background: rgba(0, 208, 132, 0.2); color: var(--green-bright); border: 1px solid var(--green-bright); }
+    .badge-all-red { background: rgba(255, 77, 79, 0.2); color: var(--red-bright); border: 1px solid var(--red-bright); }
+    .badge-partial-green { background: rgba(0, 135, 62, 0.2); color: #81c784; }
+    .badge-partial-red { background: rgba(198, 18, 33, 0.2); color: #e57373; }
+    .badge-mixed { background: #1c2027; color: #808b98; }
+
+    /* Matrix Blocks */
+    .cell-trend {
+      font-weight: 700;
+      font-size: 12px;
+      width: 95px;
+      user-select: none;
+      padding: 10px 4px;
+    }
+
+    .uptrend { background-color: var(--green-uptrend) !important; color: #ffffff !important; text-transform: lowercase; }
+    .downtrend { background-color: var(--red-downtrend) !important; color: #ffffff !important; text-transform: lowercase; }
+
+    .chop-green { background-color: var(--chop-green) !important; color: #ffffff !important; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
+    .chop-orange { background-color: var(--chop-orange) !important; color: #ffffff !important; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
+    .chop-red { background-color: var(--chop-red) !important; color: #ffffff !important; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 800; }
+
+    /* Slide-over Inspection Drawer */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 1000;
+    }
+    .drawer {
+      position: fixed;
+      right: -520px;
+      top: 0;
+      width: 500px;
+      max-width: 95vw;
+      height: 100vh;
+      background: #0f1217;
+      border-left: 1px solid var(--border-color);
+      z-index: 1001;
+      padding: 24px;
+      overflow-y: auto;
+      transition: right 0.28s ease-in-out;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    }
+    .drawer.open { right: 0; }
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+    .drawer-close {
+      background: #1c212a;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      font-size: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: #151921;
+      border: 1px solid var(--border-color);
+      padding: 12px;
+      border-radius: 4px;
+    }
+    .metric-card span {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .metric-card strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Live Indices Banner -->
+  <div class="indices-container" id="indicesBar">
+    <div class="index-card"><div><div class="index-name">NIFTY 50</div><div class="index-value">--</div></div><div class="index-change">--</div></div>
+    <div class="index-card"><div><div class="index-name">BANK NIFTY</div><div class="index-value">--</div></div><div class="index-change">--</div></div>
+    <div class="index-card"><div><div class="index-name">FINNIFTY</div><div class="index-value">--</div></div><div class="index-change">--</div></div>
+    <div class="index-card"><div><div class="index-name">INDIA VIX</div><div class="index-value">--</div></div><div class="index-change">--</div></div>
+  </div>
+
+  <!-- Primary Tab Navigation Bar -->
+  <div class="navigation-bar">
+    <div class="main-nav-tabs">
+      <button id="navTrendBtn" class="nav-tab active" onclick="setMainTab('trend')">TRENDFINDER MATRIX</button>
+      <button id="navChopBtn" class="nav-tab" onclick="setMainTab('chop')">CHOPPY MARKET MATRIX</button>
+    </div>
+
+    <div class="choppy-legend" id="chopLegend" style="display: none;">
+      <span class="legend-badge" style="background: var(--chop-green);">GOOD (&ge; 50)</span>
+      <span class="legend-badge" style="background: var(--chop-orange);">POTENTIAL (30-40)</span>
+      <span class="legend-badge" style="background: var(--chop-red);">CHOPPY (&le; 20)</span>
+    </div>
+  </div>
+
+  <!-- Dynamic Stats Bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stats-group" id="trendStatsGroup">
+      <div class="stat-item">
+        <span class="stat-label">Total Assets</span>
+        <span class="stat-value" id="statTotal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--green-bright)">All 7 Green</span>
+        <span class="stat-value" style="color: var(--green-bright)" id="statAllGreen">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--red-bright)">All 7 Red</span>
+        <span class="stat-value" style="color: var(--red-bright)" id="statAllRed">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: #81c784">Bullish (&ge; 4G)</span>
+        <span class="stat-value" style="color: #81c784" id="statBulls">--</span>
+      </div>
+    </div>
+
+    <div class="stats-group" id="chopStatsGroup" style="display: none;">
+      <div class="stat-item">
+        <span class="stat-label">Total Assets</span>
+        <span class="stat-value" id="statChopTotal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--green-bright)">All 7 Good (&ge; 50)</span>
+        <span class="stat-value" style="color: var(--green-bright)" id="statAllChopGood">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--red-bright)">All 7 Choppy (&le; 20)</span>
+        <span class="stat-value" style="color: var(--red-bright)" id="statAllChopBad">--</span>
+      </div>
+    </div>
+
+    <div class="bias-bar-wrap">
+      <span class="stat-label" id="biasPercent">50% BULLISH</span>
+      <div class="bias-track">
+        <div class="bias-fill" id="biasBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="title-group">
+      <h1 id="screenTitle">NIFTY 50 &amp; F&amp;O TRENDFINDER <span class="badge-fo">PRO</span></h1>
+      <p id="screenSubtitle">Multi-Timeframe 200 EMA Pure Trend Screener</p>
+    </div>
+
+    <!-- Refresh Config Panel -->
+    <div class="refresh-panel">
+      <div class="mode-switch-group">
+        <button id="modeManualBtn" class="mode-btn" onclick="switchRefreshMode('manual')">MANUAL</button>
+        <button id="modeAutoBtn" class="mode-btn active" onclick="switchRefreshMode('auto')">AUTO</button>
+      </div>
+
+      <div id="autoControls" class="auto-interval-controls">
+        <input type="number" id="intervalInput" min="5" max="3600" value="60" onchange="applyIntervalChange()">
+        <select id="intervalUnit" onchange="applyIntervalChange()">
+          <option value="s">Sec</option>
+          <option value="m">Min</option>
+        </select>
+        <span id="countdownLabel" class="countdown-chip">60s</span>
+      </div>
+
+      <button class="btn-scan" onclick="manualScanClick()">SCAN NOW</button>
+    </div>
+  </header>
+
+  <!-- Filter & Search Toolbar with Tooltips -->
+  <div class="toolbar">
+    <div class="filter-tabs" id="trendFilters">
+      <div class="tooltip-container">
+        <button class="tab-btn active" onclick="setTrendFilter('all', this)">ALL CONTRACTS</button>
+        <span class="tooltip-text">Displays all F&amp;O contracts without any timeframe or trend filtering.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn tab-btn-super-green" onclick="setTrendFilter('ALL_GREEN_7', this)">ALL 7 GREEN</button>
+        <span class="tooltip-text"><strong>100% Bullish Perfection</strong>: Every single timeframe (5m through 1W) is in a clean uptrend. Highest probability trend continuation setup.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn tab-btn-super-red" onclick="setTrendFilter('ALL_RED_7', this)">ALL 7 RED</button>
+        <span class="tooltip-text"><strong>100% Bearish Breakdown</strong>: Every single timeframe (5m through 1W) is in a clean downtrend. Ideal for short setups or hedging.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setTrendFilter('STRONG BULL', this)">STRONG BULL (6+/7)</button>
+        <span class="tooltip-text"><strong>High Conviction Bullish</strong>: At least 6 of the 7 timeframes are green. Very strong upward momentum with minor minor-timeframe noise.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setTrendFilter('STRONG BEAR', this)">STRONG BEAR (6+/7)</button>
+        <span class="tooltip-text"><strong>High Conviction Bearish</strong>: At least 6 of the 7 timeframes are red. Strong structural sell-off underway.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setTrendFilter('DIP BUY WATCH', this)">DIP BUY RADAR</button>
+        <span class="tooltip-text"><strong>Pullback Entry Zone</strong>: Macro timeframes (1D, 4h, 1h) are in a confirmed uptrend, but short timeframes (5m/15m) are currently dipping. Highest Risk:Reward setup.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setTrendFilter('MIXED', this)">MIXED / CHOP</button>
+        <span class="tooltip-text"><strong>Conflicted Alignment</strong>: Stock has split green and red signals across timeframes. High probability of whipsaw—better to sit out.</span>
+      </div>
+    </div>
+
+    <div class="filter-tabs" id="chopFilters" style="display: none;">
+      <div class="tooltip-container">
+        <button class="tab-btn active" onclick="setChopFilter('all', this)">ALL CONTRACTS</button>
+        <span class="tooltip-text">Displays all F&amp;O contracts without choppy score restrictions.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn tab-btn-super-green" onclick="setChopFilter('ALL_GOOD_7', this)">ALL 7 GOOD (&ge; 50)</button>
+        <span class="tooltip-text"><strong>Perpetual Momentum</strong>: Every single timeframe scores 50 or above (Green)[cite: 3]. Zero chop anywhere on the chart—maximum trend velocity[cite: 3].</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn tab-btn-super-red" onclick="setChopFilter('ALL_CHOP_7', this)">ALL 7 CHOP (&le; 20)</button>
+        <span class="tooltip-text"><strong>Deadlock Consolidation</strong>: Every single timeframe scores 20 or below (Red)[cite: 3]. Flat, stagnant price action with zero follow-through[cite: 3]. Do NOT trade breakouts here[cite: 3].</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setChopFilter('GOOD_AVG', this)" style="color: var(--green-bright);">AVG GOOD (&ge; 50)</button>
+        <span class="tooltip-text"><strong>Net Trending</strong>: The composite 7-timeframe choppy score average is 50 or higher[cite: 3]. Good directional expansion[cite: 3].</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setChopFilter('POTENTIAL', this)" style="color: #d97706;">POTENTIAL (30-40)</button>
+        <span class="tooltip-text"><strong>Transition / Squeeze Alert</strong>: Stock is transitioning between trend and consolidation[cite: 3]. Watch for momentum breakout or breakdown[cite: 3].</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setChopFilter('CHOP_AVG', this)" style="color: var(--red-bright);">AVG CHOPPY (&le; 20)</button>
+        <span class="tooltip-text"><strong>Heavy Whipsaw</strong>: Composite choppy score average is 20 or lower[cite: 3]. Price is stuck oscillating in a tight range[cite: 3].</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+      <select id="sectorSelect" class="filter-select" onchange="filterAndRender()">
+        <option value="ALL">ALL SECTORS</option>
+        <option value="BANKING">BANKING</option>
+        <option value="FINANCE">FINANCE</option>
+        <option value="IT">IT</option>
+        <option value="AUTO">AUTO</option>
+        <option value="ENERGY">ENERGY</option>
+        <option value="METALS">METALS</option>
+        <option value="FMCG">FMCG</option>
+        <option value="HEALTHCARE">HEALTHCARE</option>
+        <option value="CAPITAL GOODS">CAPITAL GOODS</option>
+        <option value="CEMENT">CEMENT</option>
+      </select>
+
+      <select id="sortSelect" class="filter-select" onchange="filterAndRender()">
+        <option value="all_green_first">Sort: Highest Green Count (7/7 First)</option>
+        <option value="all_red_first">Sort: Highest Red Count (7/7 Red First)</option>
+        <option value="chop_high_first">Sort: Choppy Score (Highest 100 &rarr; 0)</option>
+        <option value="chop_low_first">Sort: Choppy Score (Lowest 0 &rarr; 100)</option>
+        <option value="change_desc">Sort: % Gainers (High &rarr; Low)</option>
+        <option value="change_asc">Sort: % Losers (Low &rarr; High)</option>
+        <option value="symbol">Sort: Symbol Name (A &rarr; Z)</option>
+      </select>
+
+      <input type="text" id="searchInput" class="search-box" placeholder="Search stock symbol..." onkeyup="filterAndRender()">
+    </div>
+  </div>
+
+  <!-- Table Matrix -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 34px;">SEC</th>
+          <th style="text-align: left; padding-left: 14px;">ASSET / TIMEFRAME ALIGNMENT</th>
+          <th>5m</th>
+          <th>15m</th>
+          <th>30m</th>
+          <th>1h</th>
+          <th>4h</th>
+          <th>1D</th>
+          <th>1W</th>
+        </tr>
+      </thead>
+      <tbody id="matrix-body">
+        <tr>
+          <td colspan="9" style="padding: 40px; color: var(--text-muted);">
+            Connecting to <code>/api/scan</code>...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Technical Modal Drawer -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+  <div class="drawer" id="techDrawer">
+    <div class="drawer-header">
+      <div>
+        <h2 id="drawerSymbol" style="font-size: 20px; font-weight: 800;">RELIANCE</h2>
+        <span id="drawerName" style="color: var(--text-muted); font-size: 13px;">Reliance Industries</span>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+
+    <div class="metrics-grid">
+      <div class="metric-card"><span>LTP</span><strong id="drawerLtp">₹0.00</strong></div>
+      <div class="metric-card"><span>Day Change</span><strong id="drawerChange">0.00%</strong></div>
+      <div class="metric-card"><span id="drawerMetricLabel">Score / Alignment</span><strong id="drawerMetricVal">--</strong></div>
+      <div class="metric-card"><span>Sector</span><strong id="drawerSector">--</strong></div>
+    </div>
+
+    <h3 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; color: var(--text-muted);">Price Action (30-Day Candles)</h3>
+    <canvas id="candleCanvas" width="450" height="190" style="background: #14171d; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; height: 190px;"></canvas>
+
+    <h3 id="drawerBreakdownTitle" style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px; color: var(--text-muted);">Multi-Timeframe Breakdown</h3>
+    <div id="drawerBreakdown" style="display: flex; flex-direction: column; gap: 8px;"></div>
+  </div>
+
+  <script>
+    const TIME_COLUMNS = ['5m', '15m', '30m', '1h', '4h', '1D', '1W'];
+    let allStocks = [];
+    let currentMainTab = 'trend';
+    let currentTrendFilter = 'all';
+    let currentChopFilter = 'all';
+
+    let refreshMode = 'auto';
+    let totalSeconds = 60;
+    let remainingSeconds = 60;
+    let timerInterval = null;
+    let isFetching = false;
+
+    function setMainTab(tab) {
+      currentMainTab = tab;
+      document.getElementById('navTrendBtn').classList.toggle('active', tab === 'trend');
+      document.getElementById('navChopBtn').classList.toggle('active', tab === 'chop');
+      document.getElementById('chopLegend').style.display = tab === 'chop' ? 'flex' : 'none';
+
+      document.getElementById('trendStatsGroup').style.display = tab === 'trend' ? 'flex' : 'none';
+      document.getElementById('chopStatsGroup').style.display = tab === 'chop' ? 'flex' : 'none';
+
+      document.getElementById('trendFilters').style.display = tab === 'trend' ? 'flex' : 'none';
+      document.getElementById('chopFilters').style.display = tab === 'chop' ? 'flex' : 'none';
+
+      if (tab === 'trend') {
+        document.getElementById('screenTitle').innerHTML = 'NIFTY 50 &amp; F&amp;O TRENDFINDER <span class="badge-fo">PRO</span>';
+        document.getElementById('screenSubtitle').innerText = 'Multi-Timeframe 200 EMA Pure Trend Screener';
+      } else {
+        document.getElementById('screenTitle').innerHTML = 'NIFTY 50 &amp; F&amp;O CHOPPY MARKET <span class="badge-fo" style="background: #d97706;">SCORE</span>';
+        document.getElementById('screenSubtitle').innerText = 'TradingRush Choppy Market Indicator (Higher Number = Better)';
+      }
+
+      updateStatsDisplay();
+      filterAndRender();
+    }
+
+    function setTrendFilter(filter, btn) {
+      currentTrendFilter = filter;
+      document.querySelectorAll('#trendFilters .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterAndRender();
+    }
+
+    function setChopFilter(filter, btn) {
+      currentChopFilter = filter;
+      document.querySelectorAll('#chopFilters .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterAndRender();
+    }
+
+    function switchRefreshMode(mode) {
+      refreshMode = mode;
+      const manualBtn = document.getElementById('modeManualBtn');
+      const autoBtn = document.getElementById('modeAutoBtn');
+      const autoControls = document.getElementById('autoControls');
+
+      if (mode === 'manual') {
+        manualBtn.classList.add('active');
+        autoBtn.classList.remove('active');
+        autoControls.style.display = 'none';
+        clearInterval(timerInterval);
+      } else {
+        autoBtn.classList.add('active');
+        manualBtn.classList.remove('active');
+        autoControls.style.display = 'flex';
+        applyIntervalChange();
+      }
+    }
+
+    function applyIntervalChange() {
+      const val = parseInt(document.getElementById('intervalInput').value) || 30;
+      const unit = document.getElementById('intervalUnit').value;
+
+      totalSeconds = unit === 'm' ? val * 60 : val;
+      if (totalSeconds < 5) totalSeconds = 5;
+
+      remainingSeconds = totalSeconds;
+      updateCountdownDisplay();
+      startAutoCountdown();
+    }
+
+    function updateCountdownDisplay() {
+      const label = document.getElementById('countdownLabel');
+      if (remainingSeconds >= 60) {
+        const m = Math.floor(remainingSeconds / 60);
+        const s = remainingSeconds % 60;
+        label.innerText = `${m}m ${s < 10 ? '0' : ''}${s}s`;
+      } else {
+        label.innerText = `${remainingSeconds}s`;
+      }
+    }
+
+    function startAutoCountdown() {
+      clearInterval(timerInterval);
+      if (refreshMode !== 'auto') return;
+
+      timerInterval = setInterval(() => {
+        remainingSeconds--;
+        updateCountdownDisplay();
+
+        if (remainingSeconds <= 0) {
+          remainingSeconds = totalSeconds;
+          fetchLiveMarketData();
+        }
+      }, 1000);
+    }
+
+    function manualScanClick() {
+      remainingSeconds = totalSeconds;
+      updateCountdownDisplay();
+      fetchLiveMarketData();
+    }
+
+    async function fetchLiveMarketData() {
+      if (isFetching) return;
+      isFetching = true;
+
+      const scanBtn = document.querySelector('.btn-scan');
+      if (scanBtn) {
+        scanBtn.innerText = 'SCANNING...';
+        scanBtn.style.opacity = '0.6';
+      }
+
+      try {
+        const res = await fetch('/api/scan', {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        
+        if (data.indices && data.indices.length > 0) {
+          renderIndices(data.indices);
+        }
+
+        allStocks = (data.stocks || []).map(stock => {
+          let greenTfCount = 0;
+          let redTfCount = 0;
+          let goodChopCount = 0;
+          let badChopCount = 0;
+
+          TIME_COLUMNS.forEach(tf => {
+            if (stock.trends && stock.trends[tf] && stock.trends[tf].status === 'uptrend') {
+              greenTfCount++;
+            } else {
+              redTfCount++;
+            }
+
+            if (stock.choppy && stock.choppy[tf]) {
+              const sc = stock.choppy[tf].score;
+              if (sc >= 50) goodChopCount++;
+              else if (sc <= 20) badChopCount++;
+            }
+          });
+
+          return {
+            ...stock,
+            greenCount: greenTfCount,
+            redCount: redTfCount,
+            goodChopCount: goodChopCount,
+            badChopCount: badChopCount,
+            isAllGreen: greenTfCount === 7,
+            isAllRed: redTfCount === 7,
+            isAllChopGood: goodChopCount === 7,
+            isAllChopBad: badChopCount === 7
+          };
+        });
+
+        updateStatsDisplay();
+        filterAndRender();
+      } catch (err) {
+        console.error("Backend Error:", err);
+      } finally {
+        isFetching = false;
+        if (scanBtn) {
+          scanBtn.innerText = 'SCAN NOW';
+          scanBtn.style.opacity = '1';
+        }
+      }
+    }
+
+    function renderIndices(indices) {
+      const container = document.getElementById('indicesBar');
+      container.innerHTML = '';
+      indices.forEach(idx => {
+        const isUp = idx.change >= 0;
+        const color = isUp ? 'var(--green-bright)' : 'var(--red-bright)';
+        const card = document.createElement('div');
+        card.className = 'index-card';
+        card.innerHTML = `
+          <div>
+            <div class="index-name">${idx.name}</div>
+            <div class="index-value">${idx.value.toLocaleString('en-IN')}</div>
+          </div>
+          <div class="index-change" style="color: ${color}">
+            ${isUp ? '+' : ''}${idx.change} (${isUp ? '+' : ''}${idx.pct}%)
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function updateStatsDisplay() {
+      if (allStocks.length === 0) return;
+
+      if (currentMainTab === 'trend') {
+        document.getElementById('statTotal').innerText = allStocks.length;
+        const allGreenCount = allStocks.filter(s => s.isAllGreen).length;
+        const allRedCount = allStocks.filter(s => s.isAllRed).length;
+        const bulls = allStocks.filter(s => s.greenCount >= 4).length;
+
+        document.getElementById('statAllGreen').innerText = allGreenCount;
+        document.getElementById('statAllRed').innerText = allRedCount;
+        document.getElementById('statBulls').innerText = bulls;
+
+        const totalScored = bulls + (allStocks.length - bulls) || 1;
+        const bullPct = Math.round((bulls / totalScored) * 100);
+        document.getElementById('biasBar').style.width = `${bullPct}%`;
+        document.getElementById('biasPercent').innerText = `${bullPct}% BULLISH BIAS`;
+      } else {
+        document.getElementById('statChopTotal').innerText = allStocks.length;
+        const allGoodCount = allStocks.filter(s => s.isAllChopGood).length;
+        const allBadCount = allStocks.filter(s => s.isAllChopBad).length;
+        const goodAvg = allStocks.filter(s => s.avg_chop >= 50).length;
+
+        document.getElementById('statAllChopGood').innerText = allGoodCount;
+        document.getElementById('statAllChopBad').innerText = allBadCount;
+
+        const goodPct = Math.round((goodAvg / allStocks.length) * 100);
+        document.getElementById('biasBar').style.width = `${goodPct}%`;
+        document.getElementById('biasPercent').innerText = `${goodPct}% ACTIVE TRENDING`;
+      }
+    }
+
+    function filterAndRender() {
+      const query = document.getElementById('searchInput').value.toUpperCase();
+      const sector = document.getElementById('sectorSelect').value;
+      const sortBy = document.getElementById('sortSelect').value;
+
+      let filtered = allStocks.filter(stock => {
+        const matchesQuery = stock.symbol.includes(query) || stock.name.toUpperCase().includes(query);
+        const matchesSector = sector === 'ALL' || stock.sector === sector;
+
+        let matchesTabFilter = true;
+        if (currentMainTab === 'trend') {
+          if (currentTrendFilter === 'ALL_GREEN_7') matchesTabFilter = stock.isAllGreen;
+          else if (currentTrendFilter === 'ALL_RED_7') matchesTabFilter = stock.isAllRed;
+          else if (currentTrendFilter === 'STRONG BULL') matchesTabFilter = stock.greenCount >= 6;
+          else if (currentTrendFilter === 'STRONG BEAR') matchesTabFilter = stock.redCount >= 6;
+          else if (currentTrendFilter === 'DIP BUY WATCH') matchesTabFilter = stock.trend_signal === 'DIP BUY WATCH';
+          else if (currentTrendFilter === 'MIXED') matchesTabFilter = stock.greenCount > 1 && stock.greenCount < 6;
+        } else {
+          if (currentChopFilter === 'ALL_GOOD_7') matchesTabFilter = stock.isAllChopGood;
+          else if (currentChopFilter === 'ALL_CHOP_7') matchesTabFilter = stock.isAllChopBad;
+          else if (currentChopFilter === 'GOOD_AVG') matchesTabFilter = stock.avg_chop >= 50;
+          else if (currentChopFilter === 'CHOP_AVG') matchesTabFilter = stock.avg_chop <= 20;
+          else if (currentChopFilter === 'POTENTIAL') matchesTabFilter = stock.avg_chop >= 30 && stock.avg_chop <= 40;
+        }
+
+        return matchesQuery && matchesSector && matchesTabFilter;
+      });
+
+      filtered.sort((a, b) => {
+        if (sortBy === 'all_green_first') {
+          return b.greenCount - a.greenCount || b.avg_chop - a.avg_chop;
+        } else if (sortBy === 'all_red_first') {
+          return b.redCount - a.redCount || a.avg_chop - b.avg_chop;
+        } else if (sortBy === 'chop_high_first') {
+          return b.avg_chop - a.avg_chop || b.greenCount - a.greenCount;
+        } else if (sortBy === 'chop_low_first') {
+          return a.avg_chop - b.avg_chop || b.redCount - a.redCount;
+        } else if (sortBy === 'change_desc') {
+          return b.change - a.change;
+        } else if (sortBy === 'change_asc') {
+          return a.change - b.change;
+        } else if (sortBy === 'symbol') {
+          return a.symbol.localeCompare(b.symbol);
+        }
+        return 0;
+      });
+
+      renderTable(filtered);
+    }
+
+    function renderTable(stocks) {
+      const tbody = document.getElementById('matrix-body');
+      tbody.innerHTML = '';
+
+      if (stocks.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="padding: 30px; color: var(--text-muted);">No stocks matching current criteria.</td></tr>`;
+        return;
+      }
+
+      const sectors = {};
+      stocks.forEach(stock => {
+        if (!sectors[stock.sector]) sectors[stock.sector] = [];
+        sectors[stock.sector].push(stock);
+      });
+
+      for (const [sector, items] of Object.entries(sectors)) {
+        items.forEach((stock, index) => {
+          const tr = document.createElement('tr');
+          tr.className = 'stock-row';
+          tr.onclick = () => openDrawer(stock);
+
+          if (index === 0) {
+            const secTd = document.createElement('td');
+            secTd.className = 'sector-col';
+            secTd.rowSpan = items.length;
+            secTd.innerText = sector;
+            tr.appendChild(secTd);
+          }
+
+          const infoTd = document.createElement('td');
+          infoTd.className = 'stock-info';
+          const changeColor = stock.change >= 0 ? 'var(--green-bright)' : 'var(--red-bright)';
+
+          let alignmentBadge = '';
+          if (currentMainTab === 'trend') {
+            if (stock.isAllGreen) {
+              alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; 7/7 ALL GREEN</span>`;
+            } else if (stock.isAllRed) {
+              alignmentBadge = `<span class="badge-confluence badge-all-red">&#x25CF; 7/7 ALL RED</span>`;
+            } else if (stock.greenCount >= 5) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-green">${stock.greenCount}/7 Green</span>`;
+            } else if (stock.redCount >= 5) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-red">${stock.redCount}/7 Red</span>`;
+            } else {
+              alignmentBadge = `<span class="badge-confluence badge-mixed">${stock.greenCount}G / ${stock.redCount}R</span>`;
+            }
+          } else {
+            if (stock.isAllChopGood) {
+              alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; 7/7 GOOD (&ge;50)</span>`;
+            } else if (stock.isAllChopBad) {
+              alignmentBadge = `<span class="badge-confluence badge-all-red">&#x25CF; 7/7 CHOP (&le;20)</span>`;
+            } else if (stock.avg_chop >= 50) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-green">Avg: ${stock.avg_chop} Good</span>`;
+            } else if (stock.avg_chop <= 20) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-red">Avg: ${stock.avg_chop} Chop</span>`;
+            } else {
+              alignmentBadge = `<span class="badge-confluence badge-mixed">Avg: ${stock.avg_chop} Potential</span>`;
+            }
+          }
+
+          infoTd.innerHTML = `
+            <span class="stock-symbol">${stock.symbol}</span>
+            <span class="stock-price">₹${stock.ltp.toLocaleString('en-IN')} <span style="color: ${changeColor}">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span></span>
+            <div>${alignmentBadge}</div>
+          `;
+          tr.appendChild(infoTd);
+
+          TIME_COLUMNS.forEach(tf => {
+            const td = document.createElement('td');
+
+            if (currentMainTab === 'trend') {
+              const tData = stock.trends && stock.trends[tf] ? stock.trends[tf] : { status: 'downtrend' };
+              td.className = `cell-trend ${tData.status}`;
+              td.innerText = tData.status;
+            } else {
+              const cData = stock.choppy && stock.choppy[tf] ? stock.choppy[tf] : { score: 0, status: 'chop-red' };
+              td.className = `cell-trend ${cData.status}`;
+              td.innerText = cData.score;
+            }
+
+            tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+        });
+      }
+    }
+
+    function openDrawer(stock) {
+      document.getElementById('drawerSymbol').innerText = stock.symbol;
+      document.getElementById('drawerName').innerText = stock.name;
+      document.getElementById('drawerLtp').innerText = `₹${stock.ltp.toLocaleString('en-IN')}`;
+      document.getElementById('drawerSector').innerText = stock.sector;
+
+      const changeEl = document.getElementById('drawerChange');
+      changeEl.innerText = `${stock.change >= 0 ? '+' : ''}${stock.change}%`;
+      changeEl.style.color = stock.change >= 0 ? 'var(--green-bright)' : 'var(--red-bright)';
+
+      if (currentMainTab === 'trend') {
+        document.getElementById('drawerMetricLabel').innerText = 'Timeframe Alignment';
+        document.getElementById('drawerMetricVal').innerText = `${stock.greenCount}/7 Green (${stock.isAllGreen ? 'PERFECT' : stock.trend_signal})`;
+        document.getElementById('drawerBreakdownTitle').innerText = 'TrendFinder 200 EMA Breakdown';
+      } else {
+        document.getElementById('drawerMetricLabel').innerText = 'Choppy Alignment';
+        document.getElementById('drawerMetricVal').innerText = `${stock.goodChopCount}/7 Good (Avg ${stock.avg_chop}/100)`;
+        document.getElementById('drawerBreakdownTitle').innerText = 'Choppy Market 10-Bar Breakdown';
+      }
+
+      const bContainer = document.getElementById('drawerBreakdown');
+      bContainer.innerHTML = '';
+
+      TIME_COLUMNS.forEach(tf => {
+        const div = document.createElement('div');
+        div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; background: #151921; padding: 10px 14px; border-radius: 4px; border: 1px solid var(--border-color);';
+
+        if (currentMainTab === 'trend') {
+          const item = stock.trends[tf] || { status: 'downtrend', e200: 0 };
+          div.innerHTML = `
+            <strong style="font-family: 'JetBrains Mono'; font-size: 13px;">${tf}</strong>
+            <span class="cell-trend ${item.status}" style="width: auto; padding: 4px 12px; border-radius: 3px;">${item.status}</span>
+            <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text-muted);">200 EMA: ₹${item.e200 || '--'}</span>
+          `;
+        } else {
+          const item = stock.choppy[tf] || { score: 0, status: 'chop-red', label: 'CHOPPY' };
+          div.innerHTML = `
+            <strong style="font-family: 'JetBrains Mono'; font-size: 13px;">${tf}</strong>
+            <span class="cell-trend ${item.status}" style="width: auto; padding: 4px 14px; border-radius: 3px;">${item.score}</span>
+            <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text-muted);">${item.label}</span>
+          `;
+        }
+
+        bContainer.appendChild(div);
+      });
+
+      drawCandles(stock.candles || []);
+
+      document.getElementById('drawerOverlay').style.display = 'block';
+      document.getElementById('techDrawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawerOverlay').style.display = 'none';
+      document.getElementById('techDrawer').classList.remove('open');
+    }
+
+    function drawCandles(candles) {
+      const cvs = document.getElementById('candleCanvas');
+      const ctx = cvs.getContext('2d');
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
+
+      if (!candles || candles.length === 0) return;
+
+      const highs = candles.map(c => c.h);
+      const lows = candles.map(c => c.l);
+      const maxH = Math.max(...highs);
+      const minL = Math.min(...lows);
+      const range = maxH - minL || 1;
+
+      const pad = 15;
+      const ch = cvs.height - pad * 2;
+      const barW = Math.max(3, (cvs.width - 20) / candles.length - 3);
+
+      candles.forEach((c, i) => {
+        const x = 10 + i * (barW + 3);
+        const yOpen = pad + ch - ((c.o - minL) / range) * ch;
+        const yClose = pad + ch - ((c.c - minL) / range) * ch;
+        const yHigh = pad + ch - ((c.h - minL) / range) * ch;
+        const yLow = pad + ch - ((c.l - minL) / range) * ch;
+
+        const isGreen = c.c >= c.o;
+        ctx.strokeStyle = isGreen ? '#00d084' : '#ff4d4f';
+        ctx.fillStyle = isGreen ? '#00d084' : '#ff4d4f';
+
+        ctx.beginPath();
+        ctx.moveTo(x + barW / 2, yHigh);
+        ctx.lineTo(x + barW / 2, yLow);
+        ctx.stroke();
+
+        const top = Math.min(yOpen, yClose);
+        const height = Math.max(2, Math.abs(yClose - yOpen));
+        ctx.fillRect(x, top, barW, height);
+      });
+    }
+
+    fetchLiveMarketData();
+    applyIntervalChange();
+  </script>
+</body>
+</html>
