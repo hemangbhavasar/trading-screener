@@ -817,6 +817,7 @@
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
       <select id="sectorSelect" class="filter-select" onchange="filterAndRender()">
         <option value="ALL">ALL SECTORS</option>
+        <option value="INDEX">INDEX</option>
         <option value="BANKING">BANKING</option>
         <option value="FINANCE">FINANCE</option>
         <option value="IT">IT</option>
@@ -1230,8 +1231,131 @@
         return;
       }
 
+      // Render INDEXES section first
+      const indexStocks = stocks.filter(s => s.sector === 'INDEX');
+      if (indexStocks.length > 0) {
+        indexStocks.forEach((stock, index) => {
+          const tr = document.createElement('tr');
+          tr.className = 'stock-row';
+          tr.onclick = () => openDrawer(stock);
+
+          if (index === 0) {
+            const secTd = document.createElement('td');
+            secTd.className = 'sector-col';
+            secTd.rowSpan = indexStocks.length;
+            secTd.innerText = 'INDEXES';
+            tr.appendChild(secTd);
+          }
+
+          const infoTd = document.createElement('td');
+          infoTd.className = 'stock-info';
+          const changeColor = stock.change >= 0 ? 'var(--green-bright)' : 'var(--red-bright)';
+
+          let alignmentBadge = '';
+          if (currentMainTab === 'trend') {
+            if (stock.isAllGreen) {
+              alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; 7/7 ALL GREEN</span>`;
+            } else if (stock.isAllRed) {
+              alignmentBadge = `<span class="badge-confluence badge-all-red">&#x25CF; 7/7 ALL RED</span>`;
+            } else if (stock.greenCount >= 5) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-green">${stock.greenCount}/7 Green</span>`;
+            } else if (stock.redCount >= 5) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-red">${stock.redCount}/7 Red</span>`;
+            } else {
+              alignmentBadge = `<span class="badge-confluence badge-mixed">${stock.greenCount}G / ${stock.redCount}R</span>`;
+            }
+          } else if (currentMainTab === 'chop') {
+            if (stock.isAllChopGood) {
+              alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; 7/7 GOOD (&ge;50)</span>`;
+            } else if (stock.isAllChopBad) {
+              alignmentBadge = `<span class="badge-confluence badge-all-red">&#x25CF; 7/7 CHOP (&le;20)</span>`;
+            } else if (stock.avg_chop >= 50) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-green">Avg: ${stock.avg_chop} Good</span>`;
+            } else if (stock.avg_chop <= 20) {
+              alignmentBadge = `<span class="badge-confluence badge-partial-red">Avg: ${stock.avg_chop} Chop</span>`;
+            } else {
+              alignmentBadge = `<span class="badge-confluence badge-mixed">Avg: ${stock.avg_chop} Potential</span>`;
+            }
+          } else if (currentMainTab === 'divergence') {
+            if (stock.best_divergence && stock.best_divergence.has_divergence) {
+              if (stock.best_divergence.type === 'Regular Bullish') {
+                alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; ${stock.best_divergence.type} (${stock.best_divergence.signal})</span>`;
+              } else if (stock.best_divergence.type === 'Regular Bearish') {
+                alignmentBadge = `<span class="badge-confluence badge-all-red">&#x25CF; ${stock.best_divergence.type} (${stock.best_divergence.signal})</span>`;
+              } else if (stock.best_divergence.type === 'Hidden Bullish') {
+                alignmentBadge = `<span class="badge-confluence" style="background: rgba(74, 222, 128, 0.2); color: #4ade80;">&#x25CF; ${stock.best_divergence.type}</span>`;
+              } else if (stock.best_divergence.type === 'Hidden Bearish') {
+                alignmentBadge = `<span class="badge-confluence" style="background: rgba(248, 113, 113, 0.2); color: #f87171;">&#x25CF; ${stock.best_divergence.type}</span>`;
+              } else {
+                alignmentBadge = `<span class="badge-confluence badge-mixed">${stock.divergence_count} Div on TFs</span>`;
+              }
+            } else {
+              alignmentBadge = `<span class="badge-confluence badge-mixed">No Divergence</span>`;
+            }
+          }
+
+          infoTd.innerHTML = `
+            <span class="stock-symbol">${stock.symbol === '^NSEI' ? 'NIFTY' : stock.symbol === '^NSEBANK' ? 'BANKNIFTY' : stock.symbol}</span>
+            <span class="stock-price">₹${stock.ltp.toLocaleString('en-IN')} <span style="color: ${changeColor}">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span></span>
+            <div>${alignmentBadge}</div>
+          `;
+          tr.appendChild(infoTd);
+
+          TIME_COLUMNS.forEach(tf => {
+            const td = document.createElement('td');
+
+            if (currentMainTab === 'trend') {
+              const tData = stock.trends && stock.trends[tf] ? stock.trends[tf] : { status: 'downtrend' };
+              td.className = `cell-trend ${tData.status}`;
+              td.innerText = tData.status;
+            } else if (currentMainTab === 'chop') {
+              const cData = stock.choppy && stock.choppy[tf] ? stock.choppy[tf] : { score: 0, status: 'chop-red' };
+              td.className = `cell-trend ${cData.status}`;
+              td.innerText = cData.score;
+            } else if (currentMainTab === 'divergence') {
+              const dData = stock.divergence && stock.divergence[tf] ? stock.divergence[tf] : { has_divergence: false };
+              if (dData.has_divergence) {
+                if (dData.type === 'Regular Bullish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = 'var(--green-uptrend)';
+                  td.style.color = '#fff';
+                  td.innerText = 'RB';
+                } else if (dData.type === 'Regular Bearish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = 'var(--red-downtrend)';
+                  td.style.color = '#fff';
+                  td.innerText = 'RBe';
+                } else if (dData.type === 'Hidden Bullish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = '#4ade80';
+                  td.style.color = '#000';
+                  td.innerText = 'HB';
+                } else if (dData.type === 'Hidden Bearish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = '#f87171';
+                  td.style.color = '#000';
+                  td.innerText = 'HBe';
+                } else {
+                  td.className = 'cell-trend downtrend';
+                  td.innerText = '-';
+                }
+              } else {
+                td.className = 'cell-trend';
+                td.style.backgroundColor = '#1c2027';
+                td.style.color = '#808b98';
+                td.innerText = '-';
+              }
+            }
+
+            tr.appendChild(td);
+          });
+
+          tbody.appendChild(tr);
+        });
+      }
+
       const sectors = {};
-      stocks.forEach(stock => {
+      stocks.filter(s => s.sector !== 'INDEX').forEach(stock => {
         if (!sectors[stock.sector]) sectors[stock.sector] = [];
         sectors[stock.sector].push(stock);
       });

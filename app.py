@@ -64,6 +64,9 @@ INDEX_MAP = {
 }
 
 FO_STOCKS = [
+    # Major Indices
+    {"symbol": "^NSEI", "name": "NIFTY 50", "sector": "INDEX"},
+    {"symbol": "^NSEBANK", "name": "BANK NIFTY", "sector": "INDEX"},
     # Banking
     {"symbol": "HDFCBANK.NS", "name": "HDFC Bank", "sector": "BANKING"},
     {"symbol": "ICICIBANK.NS", "name": "ICICI Bank", "sector": "BANKING"},
