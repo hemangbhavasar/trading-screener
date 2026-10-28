@@ -244,6 +244,101 @@ def calculate_pure_choppy(close_series: pd.Series) -> dict:
         return {"score": score, "status": "chop-orange", "label": "POTENTIAL"}
     return {"score": score, "status": "chop-red", "label": "CHOPPY"}
 
+
+def calculate_macd(close_series: pd.Series) -> pd.DataFrame:
+    """Calculate MACD (12,26,9)"""
+    if close_series is None or len(close_series) < 35:
+        return pd.DataFrame()
+    ema12 = close_series.ewm(span=12, adjust=False).mean()
+    ema26 = close_series.ewm(span=26, adjust=False).mean()
+    macd_line = ema12 - ema26
+    signal_line = macd_line.ewm(span=9, adjust=False).mean()
+    histogram = macd_line - signal_line
+    return pd.DataFrame({
+        'macd': macd_line,
+        'signal': signal_line,
+        'hist': histogram
+    })
+
+
+def find_pivots(series: pd.Series, lookback: int = 5):
+    """Find pivot highs and lows"""
+    pivots = []
+    for i in range(lookback, len(series) - lookback):
+        is_high = True
+        is_low = True
+        for j in range(1, lookback + 1):
+            if series.iloc[i] <= series.iloc[i - j] or series.iloc[i] <= series.iloc[i + j]:
+                is_high = False
+            if series.iloc[i] >= series.iloc[i - j] or series.iloc[i] >= series.iloc[i + j]:
+                is_low = False
+        if is_high:
+            pivots.append({'index': i, 'type': 'high', 'value': float(series.iloc[i])})
+        if is_low:
+            pivots.append({'index': i, 'type': 'low', 'value': float(series.iloc[i])})
+    return pivots
+
+
+def detect_macd_divergence(df: pd.DataFrame) -> dict:
+    """Detect MACD divergences"""
+    if df is None or len(df) < 50:
+        return {"has_divergence": False, "type": None, "signal": "NONE", "score": 0, "details": ""}
+    
+    close = df['Close']
+    macd_df = calculate_macd(close)
+    if macd_df.empty:
+        return {"has_divergence": False, "type": None, "signal": "NONE", "score": 0, "details": ""}
+    
+    macd_line = macd_df['macd']
+    price_pivots = find_pivots(close, lookback=3)
+    macd_pivots = find_pivots(macd_line, lookback=3)
+    
+    result = {"has_divergence": False, "type": None, "signal": "NONE", "score": 0, "details": ""}
+    
+    # Get recent pivots (last 20-30 bars)
+    recent_price_highs = [p for p in price_pivots if p['type'] == 'high' and p['index'] >= len(close) - 40]
+    recent_price_lows = [p for p in price_pivots if p['type'] == 'low' and p['index'] >= len(close) - 40]
+    recent_macd_highs = [p for p in macd_pivots if p['type'] == 'high' and p['index'] >= len(macd_line) - 40]
+    recent_macd_lows = [p for p in macd_pivots if p['type'] == 'low' and p['index'] >= len(macd_line) - 40]
+    
+    # Regular Bullish Divergence: Lower Low in Price, Higher Low in MACD
+    if len(recent_price_lows) >= 2 and len(recent_macd_lows) >= 2:
+        p_low1 = recent_price_lows[-2]
+        p_low2 = recent_price_lows[-1]
+        m_low1 = min([m for m in recent_macd_lows if m['index'] >= p_low1['index'] - 5 and m['index'] <= p_low1['index'] + 5], key=lambda x: abs(x['index'] - p_low1['index']), default=None)
+        m_low2 = min([m for m in recent_macd_lows if m['index'] >= p_low2['index'] - 5 and m['index'] <= p_low2['index'] + 5], key=lambda x: abs(x['index'] - p_low2['index']), default=None)
+        if m_low1 and m_low2 and p_low2['value'] < p_low1['value'] and m_low2['value'] > m_low1['value']:
+            return {"has_divergence": True, "type": "Regular Bullish", "signal": "BUY", "score": 85, "details": "Lower Low in Price, Higher Low in MACD - Reversal Upward"}
+    
+    # Regular Bearish Divergence: Higher High in Price, Lower High in MACD
+    if len(recent_price_highs) >= 2 and len(recent_macd_highs) >= 2:
+        p_high1 = recent_price_highs[-2]
+        p_high2 = recent_price_highs[-1]
+        m_high1 = min([m for m in recent_macd_highs if m['index'] >= p_high1['index'] - 5 and m['index'] <= p_high1['index'] + 5], key=lambda x: abs(x['index'] - p_high1['index']), default=None)
+        m_high2 = min([m for m in recent_macd_highs if m['index'] >= p_high2['index'] - 5 and m['index'] <= p_high2['index'] + 5], key=lambda x: abs(x['index'] - p_high2['index']), default=None)
+        if m_high1 and m_high2 and p_high2['value'] > p_high1['value'] and m_high2['value'] < m_high1['value']:
+            return {"has_divergence": True, "type": "Regular Bearish", "signal": "SELL", "score": 85, "details": "Higher High in Price, Lower High in MACD - Reversal Downward"}
+    
+    # Hidden Bullish Divergence: Higher Low in Price, Lower Low in MACD
+    if len(recent_price_lows) >= 2 and len(recent_macd_lows) >= 2:
+        p_low1 = recent_price_lows[-2]
+        p_low2 = recent_price_lows[-1]
+        m_low1 = min([m for m in recent_macd_lows if m['index'] >= p_low1['index'] - 5 and m['index'] <= p_low1['index'] + 5], key=lambda x: abs(x['index'] - p_low1['index']), default=None)
+        m_low2 = min([m for m in recent_macd_lows if m['index'] >= p_low2['index'] - 5 and m['index'] <= p_low2['index'] + 5], key=lambda x: abs(x['index'] - p_low2['index']), default=None)
+        if m_low1 and m_low2 and p_low2['value'] > p_low1['value'] and m_low2['value'] < m_low1['value']:
+            return {"has_divergence": True, "type": "Hidden Bullish", "signal": "BUY", "score": 75, "details": "Higher Low in Price, Lower Low in MACD - Continuation Upward"}
+    
+    # Hidden Bearish Divergence: Lower High in Price, Higher High in MACD
+    if len(recent_price_highs) >= 2 and len(recent_macd_highs) >= 2:
+        p_high1 = recent_price_highs[-2]
+        p_high2 = recent_price_highs[-1]
+        m_high1 = min([m for m in recent_macd_highs if m['index'] >= p_high1['index'] - 5 and m['index'] <= p_high1['index'] + 5], key=lambda x: abs(x['index'] - p_high1['index']), default=None)
+        m_high2 = min([m for m in recent_macd_highs if m['index'] >= p_high2['index'] - 5 and m['index'] <= p_high2['index'] + 5], key=lambda x: abs(x['index'] - p_high2['index']), default=None)
+        if m_high1 and m_high2 and p_high2['value'] < p_high1['value'] and m_high2['value'] > m_high1['value']:
+            return {"has_divergence": True, "type": "Hidden Bearish", "signal": "SELL", "score": 75, "details": "Lower High in Price, Higher High in MACD - Continuation Downward"}
+    
+    return {"has_divergence": False, "type": None, "signal": "NONE", "score": 0, "details": ""}
+
 def resample_bars(df_source: pd.DataFrame, rule: str) -> pd.DataFrame:
     try:
         resampled = df_source.resample(rule).agg({
@@ -332,12 +427,16 @@ def scan_all():
             "change": 0.0,
             "trends": {},
             "choppy": {},
+            "divergence": {},
             "candles": [],
             "bull_count": 0,
             "bear_count": 0,
             "trend_signal": "NEUTRAL",
             "avg_chop": 0,
-            "chop_signal": "CHOPPY"
+            "chop_signal": "CHOPPY",
+            "divergence_count": 0,
+            "divergence_signals": [],
+            "best_divergence": {"has_divergence": False, "type": None, "signal": "NONE", "score": 0}
         }
         df_5m = extract_stock_df(raw_5m, sym)
         df_1h_src = extract_stock_df(raw_1h, sym)
@@ -378,6 +477,8 @@ def scan_all():
         bulls = 0
         bears = 0
         chop_vals = []
+        div_count = 0
+        div_signals = []
 
         for tf_name, frame in timeframe_dfs.items():
             t_res = calculate_pure_trend(frame)
@@ -390,10 +491,25 @@ def scan_all():
             c_res = calculate_pure_choppy(frame['Close'] if not frame.empty else None)
             res["choppy"][tf_name] = c_res
             chop_vals.append(c_res["score"])
-
+            
+            div_res = detect_macd_divergence(frame)
+            res["divergence"][tf_name] = div_res
+            if div_res["has_divergence"]:
+                div_count += 1
+                div_signals.append(div_res)
+        
         res["bull_count"] = bulls
         res["bear_count"] = bears
         res["avg_chop"] = round(sum(chop_vals) / len(chop_vals)) if chop_vals else 0
+        res["divergence_count"] = div_count
+        res["divergence_signals"] = div_signals
+        
+        # Find best divergence signal
+        if div_signals:
+            best_div = max(div_signals, key=lambda x: x["score"])
+            res["best_divergence"] = best_div
+        else:
+            res["best_divergence"] = {"has_divergence": False, "type": None, "signal": "NONE", "score": 0}
 
         if bulls >= 6:
             res["trend_signal"] = "STRONG BULL"

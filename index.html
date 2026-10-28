@@ -101,10 +101,10 @@
       border: none;
       color: var(--text-muted);
       font-family: 'Inter', sans-serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.5px;
-      padding: 8px 20px;
+      padding: 8px 16px;
       border-radius: 4px;
       cursor: pointer;
       transition: all 0.2s;
@@ -606,12 +606,19 @@
     <div class="main-nav-tabs">
       <button id="navTrendBtn" class="nav-tab active" onclick="setMainTab('trend')">TRENDFINDER MATRIX</button>
       <button id="navChopBtn" class="nav-tab" onclick="setMainTab('chop')">CHOPPY MARKET MATRIX</button>
+      <button id="navDivBtn" class="nav-tab" onclick="setMainTab('divergence')">MACD DIVERGENCE TRACKER</button>
     </div>
 
     <div class="choppy-legend" id="chopLegend" style="display: none;">
       <span class="legend-badge" style="background: var(--chop-green);">GOOD (&ge; 50)</span>
       <span class="legend-badge" style="background: var(--chop-orange);">POTENTIAL (30-40)</span>
       <span class="legend-badge" style="background: var(--chop-red);">CHOPPY (&le; 20)</span>
+    </div>
+    <div class="choppy-legend" id="divLegend" style="display: none;">
+      <span class="legend-badge" style="background: var(--green-bright);">REGULAR BULLISH/BUY</span>
+      <span class="legend-badge" style="background: var(--red-bright);">REGULAR BEARISH/SELL</span>
+      <span class="legend-badge" style="background: #4ade80;">HIDDEN BULLISH</span>
+      <span class="legend-badge" style="background: #f87171;">HIDDEN BEARISH</span>
     </div>
   </div>
 
@@ -648,6 +655,25 @@
       <div class="stat-item">
         <span class="stat-label" style="color: var(--red-bright)">All 7 Choppy (&le; 20)</span>
         <span class="stat-value" style="color: var(--red-bright)" id="statAllChopBad">--</span>
+      </div>
+    </div>
+
+    <div class="stats-group" id="divStatsGroup" style="display: none;">
+      <div class="stat-item">
+        <span class="stat-label">Total Assets</span>
+        <span class="stat-value" id="statDivTotal">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--green-bright)">Bullish Divergences</span>
+        <span class="stat-value" style="color: var(--green-bright)" id="statBullDiv">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--red-bright)">Bearish Divergences</span>
+        <span class="stat-value" style="color: var(--red-bright)" id="statBearDiv">--</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: #fbbf24">With Divergences</span>
+        <span class="stat-value" style="color: #fbbf24" id="statWithDiv">--</span>
       </div>
     </div>
 
@@ -732,27 +758,59 @@
 
       <div class="tooltip-container">
         <button class="tab-btn tab-btn-super-green" onclick="setChopFilter('ALL_GOOD_7', this)">ALL 7 GOOD (&ge; 50)</button>
-        <span class="tooltip-text"><strong>Perpetual Momentum</strong>: Every single timeframe scores 50 or above (Green)[cite: 3]. Zero chop anywhere on the chart—maximum trend velocity[cite: 3].</span>
+        <span class="tooltip-text"><strong>Perpetual Momentum</strong>: Every single timeframe scores 50 or above (Green). Zero chop anywhere on the chart—maximum trend velocity.</span>
       </div>
 
       <div class="tooltip-container">
         <button class="tab-btn tab-btn-super-red" onclick="setChopFilter('ALL_CHOP_7', this)">ALL 7 CHOP (&le; 20)</button>
-        <span class="tooltip-text"><strong>Deadlock Consolidation</strong>: Every single timeframe scores 20 or below (Red)[cite: 3]. Flat, stagnant price action with zero follow-through[cite: 3]. Do NOT trade breakouts here[cite: 3].</span>
+        <span class="tooltip-text"><strong>Deadlock Consolidation</strong>: Every single timeframe scores 20 or below (Red). Flat, stagnant price action with zero follow-through. Do NOT trade breakouts here.</span>
       </div>
 
       <div class="tooltip-container">
         <button class="tab-btn" onclick="setChopFilter('GOOD_AVG', this)" style="color: var(--green-bright);">AVG GOOD (&ge; 50)</button>
-        <span class="tooltip-text"><strong>Net Trending</strong>: The composite 7-timeframe choppy score average is 50 or higher[cite: 3]. Good directional expansion[cite: 3].</span>
+        <span class="tooltip-text"><strong>Net Trending</strong>: The composite 7-timeframe choppy score average is 50 or higher. Good directional expansion.</span>
       </div>
 
       <div class="tooltip-container">
         <button class="tab-btn" onclick="setChopFilter('POTENTIAL', this)" style="color: #d97706;">POTENTIAL (30-40)</button>
-        <span class="tooltip-text"><strong>Transition / Squeeze Alert</strong>: Stock is transitioning between trend and consolidation[cite: 3]. Watch for momentum breakout or breakdown[cite: 3].</span>
+        <span class="tooltip-text"><strong>Transition / Squeeze Alert</strong>: Stock is transitioning between trend and consolidation. Watch for momentum breakout or breakdown.</span>
       </div>
 
       <div class="tooltip-container">
         <button class="tab-btn" onclick="setChopFilter('CHOP_AVG', this)" style="color: var(--red-bright);">AVG CHOPPY (&le; 20)</button>
-        <span class="tooltip-text"><strong>Heavy Whipsaw</strong>: Composite choppy score average is 20 or lower[cite: 3]. Price is stuck oscillating in a tight range[cite: 3].</span>
+        <span class="tooltip-text"><strong>Heavy Whipsaw</strong>: Composite choppy score average is 20 or lower. Price is stuck oscillating in a tight range.</span>
+      </div>
+    </div>
+
+    <div class="filter-tabs" id="divFilters" style="display: none;">
+      <div class="tooltip-container">
+        <button class="tab-btn active" onclick="setDivFilter('all', this)">ALL CONTRACTS</button>
+        <span class="tooltip-text">Displays all F&amp;O contracts with or without divergences.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn tab-btn-super-green" onclick="setDivFilter('HAS_DIV', this)">HAS DIVERGENCE</button>
+        <span class="tooltip-text"><strong>Any Divergence Found</strong>: Shows stocks with any type of MACD divergence across timeframes.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setDivFilter('REGULAR_BULL', this)" style="color: var(--green-bright);">REGULAR BULLISH (BUY)</button>
+        <span class="tooltip-text"><strong>Regular Bullish Divergence</strong>: Price makes Lower Low, MACD makes Higher Low. Strong reversal signal - consider buying.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setDivFilter('REGULAR_BEAR', this)" style="color: var(--red-bright);">REGULAR BEARISH (SELL)</button>
+        <span class="tooltip-text"><strong>Regular Bearish Divergence</strong>: Price makes Higher High, MACD makes Lower High. Strong reversal signal - consider selling/shorting.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setDivFilter('HIDDEN_BULL', this)" style="color: #4ade80;">HIDDEN BULLISH (CONTINUATION)</button>
+        <span class="tooltip-text"><strong>Hidden Bullish Divergence</strong>: Price makes Higher Low, MACD makes Lower Low. Uptrend continuation signal - add to long positions.</span>
+      </div>
+
+      <div class="tooltip-container">
+        <button class="tab-btn" onclick="setDivFilter('HIDDEN_BEAR', this)" style="color: #f87171;">HIDDEN BEARISH (CONTINUATION)</button>
+        <span class="tooltip-text"><strong>Hidden Bearish Divergence</strong>: Price makes Lower High, MACD makes Higher High. Downtrend continuation signal - add to short positions.</span>
       </div>
     </div>
 
@@ -842,6 +900,7 @@
     let currentMainTab = 'trend';
     let currentTrendFilter = 'all';
     let currentChopFilter = 'all';
+    let currentDivFilter = 'all';
 
     let refreshMode = 'auto';
     let totalSeconds = 60;
@@ -853,20 +912,27 @@
       currentMainTab = tab;
       document.getElementById('navTrendBtn').classList.toggle('active', tab === 'trend');
       document.getElementById('navChopBtn').classList.toggle('active', tab === 'chop');
+      document.getElementById('navDivBtn').classList.toggle('active', tab === 'divergence');
       document.getElementById('chopLegend').style.display = tab === 'chop' ? 'flex' : 'none';
+      document.getElementById('divLegend').style.display = tab === 'divergence' ? 'flex' : 'none';
 
       document.getElementById('trendStatsGroup').style.display = tab === 'trend' ? 'flex' : 'none';
       document.getElementById('chopStatsGroup').style.display = tab === 'chop' ? 'flex' : 'none';
+      document.getElementById('divStatsGroup').style.display = tab === 'divergence' ? 'flex' : 'none';
 
       document.getElementById('trendFilters').style.display = tab === 'trend' ? 'flex' : 'none';
       document.getElementById('chopFilters').style.display = tab === 'chop' ? 'flex' : 'none';
+      document.getElementById('divFilters').style.display = tab === 'divergence' ? 'flex' : 'none';
 
       if (tab === 'trend') {
         document.getElementById('screenTitle').innerHTML = 'NIFTY 50 &amp; F&amp;O TRENDFINDER <span class="badge-fo">PRO</span>';
         document.getElementById('screenSubtitle').innerText = 'Multi-Timeframe 200 EMA Pure Trend Screener';
-      } else {
+      } else if (tab === 'chop') {
         document.getElementById('screenTitle').innerHTML = 'NIFTY 50 &amp; F&amp;O CHOPPY MARKET <span class="badge-fo" style="background: #d97706;">SCORE</span>';
         document.getElementById('screenSubtitle').innerText = 'TradingRush Choppy Market Indicator (Higher Number = Better)';
+      } else if (tab === 'divergence') {
+        document.getElementById('screenTitle').innerHTML = 'NIFTY 50 &amp; F&amp;O MACD DIVERGENCE <span class="badge-fo" style="background: #6366f1;">TRACKER</span>';
+        document.getElementById('screenSubtitle').innerText = 'Regular & Hidden Bullish/Bearish Divergences Across Timeframes';
       }
 
       updateStatsDisplay();
@@ -883,6 +949,13 @@
     function setChopFilter(filter, btn) {
       currentChopFilter = filter;
       document.querySelectorAll('#chopFilters .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterAndRender();
+    }
+
+    function setDivFilter(filter, btn) {
+      currentDivFilter = filter;
+      document.querySelectorAll('#divFilters .tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       filterAndRender();
     }
@@ -1054,7 +1127,7 @@
         const bullPct = Math.round((bulls / totalScored) * 100);
         document.getElementById('biasBar').style.width = `${bullPct}%`;
         document.getElementById('biasPercent').innerText = `${bullPct}% BULLISH BIAS`;
-      } else {
+      } else if (currentMainTab === 'chop') {
         document.getElementById('statChopTotal').innerText = allStocks.length;
         const allGoodCount = allStocks.filter(s => s.isAllChopGood).length;
         const allBadCount = allStocks.filter(s => s.isAllChopBad).length;
@@ -1066,6 +1139,29 @@
         const goodPct = Math.round((goodAvg / allStocks.length) * 100);
         document.getElementById('biasBar').style.width = `${goodPct}%`;
         document.getElementById('biasPercent').innerText = `${goodPct}% ACTIVE TRENDING`;
+      } else if (currentMainTab === 'divergence') {
+        document.getElementById('statDivTotal').innerText = allStocks.length;
+        const withDiv = allStocks.filter(s => s.divergence_count > 0).length;
+        const bullDiv = allStocks.filter(s => {
+          if (s.best_divergence && s.best_divergence.has_divergence) {
+            return s.best_divergence.type === 'Regular Bullish' || s.best_divergence.type === 'Hidden Bullish';
+          }
+          return false;
+        }).length;
+        const bearDiv = allStocks.filter(s => {
+          if (s.best_divergence && s.best_divergence.has_divergence) {
+            return s.best_divergence.type === 'Regular Bearish' || s.best_divergence.type === 'Hidden Bearish';
+          }
+          return false;
+        }).length;
+
+        document.getElementById('statWithDiv').innerText = withDiv;
+        document.getElementById('statBullDiv').innerText = bullDiv;
+        document.getElementById('statBearDiv').innerText = bearDiv;
+
+        const divPct = Math.round((withDiv / allStocks.length) * 100);
+        document.getElementById('biasBar').style.width = `${divPct}%`;
+        document.getElementById('biasPercent').innerText = `${divPct}% WITH DIVERGENCES`;
       }
     }
 
@@ -1086,12 +1182,18 @@
           else if (currentTrendFilter === 'STRONG BEAR') matchesTabFilter = stock.redCount >= 6;
           else if (currentTrendFilter === 'DIP BUY WATCH') matchesTabFilter = stock.trend_signal === 'DIP BUY WATCH';
           else if (currentTrendFilter === 'MIXED') matchesTabFilter = stock.greenCount > 1 && stock.greenCount < 6;
-        } else {
+        } else if (currentMainTab === 'chop') {
           if (currentChopFilter === 'ALL_GOOD_7') matchesTabFilter = stock.isAllChopGood;
           else if (currentChopFilter === 'ALL_CHOP_7') matchesTabFilter = stock.isAllChopBad;
           else if (currentChopFilter === 'GOOD_AVG') matchesTabFilter = stock.avg_chop >= 50;
           else if (currentChopFilter === 'CHOP_AVG') matchesTabFilter = stock.avg_chop <= 20;
           else if (currentChopFilter === 'POTENTIAL') matchesTabFilter = stock.avg_chop >= 30 && stock.avg_chop <= 40;
+        } else if (currentMainTab === 'divergence') {
+          if (currentDivFilter === 'HAS_DIV') matchesTabFilter = stock.divergence_count > 0;
+          else if (currentDivFilter === 'REGULAR_BULL') matchesTabFilter = stock.best_divergence && stock.best_divergence.type === 'Regular Bullish';
+          else if (currentDivFilter === 'REGULAR_BEAR') matchesTabFilter = stock.best_divergence && stock.best_divergence.type === 'Regular Bearish';
+          else if (currentDivFilter === 'HIDDEN_BULL') matchesTabFilter = stock.best_divergence && stock.best_divergence.type === 'Hidden Bullish';
+          else if (currentDivFilter === 'HIDDEN_BEAR') matchesTabFilter = stock.best_divergence && stock.best_divergence.type === 'Hidden Bearish';
         }
 
         return matchesQuery && matchesSector && matchesTabFilter;
@@ -1165,7 +1267,7 @@
             } else {
               alignmentBadge = `<span class="badge-confluence badge-mixed">${stock.greenCount}G / ${stock.redCount}R</span>`;
             }
-          } else {
+          } else if (currentMainTab === 'chop') {
             if (stock.isAllChopGood) {
               alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; 7/7 GOOD (&ge;50)</span>`;
             } else if (stock.isAllChopBad) {
@@ -1176,6 +1278,22 @@
               alignmentBadge = `<span class="badge-confluence badge-partial-red">Avg: ${stock.avg_chop} Chop</span>`;
             } else {
               alignmentBadge = `<span class="badge-confluence badge-mixed">Avg: ${stock.avg_chop} Potential</span>`;
+            }
+          } else if (currentMainTab === 'divergence') {
+            if (stock.best_divergence && stock.best_divergence.has_divergence) {
+              if (stock.best_divergence.type === 'Regular Bullish') {
+                alignmentBadge = `<span class="badge-confluence badge-all-green">&#x25CF; ${stock.best_divergence.type} (${stock.best_divergence.signal})</span>`;
+              } else if (stock.best_divergence.type === 'Regular Bearish') {
+                alignmentBadge = `<span class="badge-confluence badge-all-red">&#x25CF; ${stock.best_divergence.type} (${stock.best_divergence.signal})</span>`;
+              } else if (stock.best_divergence.type === 'Hidden Bullish') {
+                alignmentBadge = `<span class="badge-confluence" style="background: rgba(74, 222, 128, 0.2); color: #4ade80;">&#x25CF; ${stock.best_divergence.type}</span>`;
+              } else if (stock.best_divergence.type === 'Hidden Bearish') {
+                alignmentBadge = `<span class="badge-confluence" style="background: rgba(248, 113, 113, 0.2); color: #f87171;">&#x25CF; ${stock.best_divergence.type}</span>`;
+              } else {
+                alignmentBadge = `<span class="badge-confluence badge-mixed">${stock.divergence_count} Div on TFs</span>`;
+              }
+            } else {
+              alignmentBadge = `<span class="badge-confluence badge-mixed">No Divergence</span>`;
             }
           }
 
@@ -1193,10 +1311,43 @@
               const tData = stock.trends && stock.trends[tf] ? stock.trends[tf] : { status: 'downtrend' };
               td.className = `cell-trend ${tData.status}`;
               td.innerText = tData.status;
-            } else {
+            } else if (currentMainTab === 'chop') {
               const cData = stock.choppy && stock.choppy[tf] ? stock.choppy[tf] : { score: 0, status: 'chop-red' };
               td.className = `cell-trend ${cData.status}`;
               td.innerText = cData.score;
+            } else if (currentMainTab === 'divergence') {
+              const dData = stock.divergence && stock.divergence[tf] ? stock.divergence[tf] : { has_divergence: false };
+              if (dData.has_divergence) {
+                if (dData.type === 'Regular Bullish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = 'var(--green-uptrend)';
+                  td.style.color = '#fff';
+                  td.innerText = 'RB';
+                } else if (dData.type === 'Regular Bearish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = 'var(--red-downtrend)';
+                  td.style.color = '#fff';
+                  td.innerText = 'RBe';
+                } else if (dData.type === 'Hidden Bullish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = '#4ade80';
+                  td.style.color = '#000';
+                  td.innerText = 'HB';
+                } else if (dData.type === 'Hidden Bearish') {
+                  td.className = 'cell-trend';
+                  td.style.backgroundColor = '#f87171';
+                  td.style.color = '#000';
+                  td.innerText = 'HBe';
+                } else {
+                  td.className = 'cell-trend downtrend';
+                  td.innerText = '-';
+                }
+              } else {
+                td.className = 'cell-trend';
+                td.style.backgroundColor = '#1c2027';
+                td.style.color = '#808b98';
+                td.innerText = '-';
+              }
             }
 
             tr.appendChild(td);
@@ -1221,10 +1372,18 @@
         document.getElementById('drawerMetricLabel').innerText = 'Timeframe Alignment';
         document.getElementById('drawerMetricVal').innerText = `${stock.greenCount}/7 Green (${stock.isAllGreen ? 'PERFECT' : stock.trend_signal})`;
         document.getElementById('drawerBreakdownTitle').innerText = 'TrendFinder 200 EMA Breakdown';
-      } else {
+      } else if (currentMainTab === 'chop') {
         document.getElementById('drawerMetricLabel').innerText = 'Choppy Alignment';
         document.getElementById('drawerMetricVal').innerText = `${stock.goodChopCount}/7 Good (Avg ${stock.avg_chop}/100)`;
         document.getElementById('drawerBreakdownTitle').innerText = 'Choppy Market 10-Bar Breakdown';
+      } else if (currentMainTab === 'divergence') {
+        document.getElementById('drawerMetricLabel').innerText = 'Divergence Status';
+        if (stock.best_divergence && stock.best_divergence.has_divergence) {
+          document.getElementById('drawerMetricVal').innerText = `${stock.best_divergence.type} - ${stock.best_divergence.signal} (Score: ${stock.best_divergence.score})`;
+        } else {
+          document.getElementById('drawerMetricVal').innerText = `No Divergences Found`;
+        }
+        document.getElementById('drawerBreakdownTitle').innerText = 'MACD Divergence Breakdown (Regular/Hidden)';
       }
 
       const bContainer = document.getElementById('drawerBreakdown');
@@ -1241,13 +1400,34 @@
             <span class="cell-trend ${item.status}" style="width: auto; padding: 4px 12px; border-radius: 3px;">${item.status}</span>
             <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text-muted);">200 EMA: ₹${item.e200 || '--'}</span>
           `;
-        } else {
+        } else if (currentMainTab === 'chop') {
           const item = stock.choppy[tf] || { score: 0, status: 'chop-red', label: 'CHOPPY' };
           div.innerHTML = `
             <strong style="font-family: 'JetBrains Mono'; font-size: 13px;">${tf}</strong>
             <span class="cell-trend ${item.status}" style="width: auto; padding: 4px 14px; border-radius: 3px;">${item.score}</span>
             <span style="font-family: 'JetBrains Mono'; font-size: 11px; color: var(--text-muted);">${item.label}</span>
           `;
+        } else if (currentMainTab === 'divergence') {
+          const item = stock.divergence[tf] || { has_divergence: false };
+          if (item.has_divergence) {
+            let bgColor = '#1c2027';
+            let textColor = '#fff';
+            if (item.type === 'Regular Bullish') { bgColor = 'var(--green-uptrend)'; }
+            else if (item.type === 'Regular Bearish') { bgColor = 'var(--red-downtrend)'; }
+            else if (item.type === 'Hidden Bullish') { bgColor = '#4ade80'; textColor = '#000'; }
+            else if (item.type === 'Hidden Bearish') { bgColor = '#f87171'; textColor = '#000'; }
+            div.innerHTML = `
+              <strong style="font-family: 'JetBrains Mono'; font-size: 13px;">${tf}</strong>
+              <span style="width: auto; padding: 4px 10px; border-radius: 3px; background: ${bgColor}; color: ${textColor}; font-weight: 700; font-size: 11px;">${item.type}</span>
+              <span style="font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-muted);">${item.signal}</span>
+            `;
+          } else {
+            div.innerHTML = `
+              <strong style="font-family: 'JetBrains Mono'; font-size: 13px;">${tf}</strong>
+              <span style="width: auto; padding: 4px 12px; border-radius: 3px; background: #1c2027; color: #808b98;">NONE</span>
+              <span style="font-family: 'JetBrains Mono'; font-size: 10px; color: var(--text-muted);">-</span>
+            `;
+          }
         }
 
         bContainer.appendChild(div);
